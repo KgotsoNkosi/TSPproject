@@ -187,6 +187,7 @@ class Chromosome {
     				System.out.println("hey");
     				a.cityList[i%a.cityList.length] = a.cityList[(i+1)%a.cityList.length];
     				a.cityList[(i+1)%a.cityList.length] = -1;
+    				i--;
     			}
     			else {
     				a.cityList[i%a.cityList.length] =  temp.get(0);
