@@ -1,5 +1,8 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Random;
+
+import com.sun.xml.internal.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
 
 class Chromosome {
 
@@ -87,6 +90,128 @@ class Chromosome {
         cityList[index] = value;
     }
 
+    /**
+     * Find the index of a city
+     * 
+     * @param city the int value of the city being searched for
+     */
+    int findCity(int city){
+    	int pos = -1;
+    	for (int i = 0; i < cityList.length; i++){
+    		if (cityList[i] == city){
+    			pos = i;
+    		}
+    	}
+    	return pos;
+    }
+    
+    /*
+     * removes a list of cities from a list
+     * 
+     * @param cities list of city names
+     */
+    public static void remove(Chromosome a, int[] cities){
+    	/*for(int k = 0; k < cities.length; k++){
+    		System.out.print(cities[k] + " ");    	
+    	}
+    	System.out.println("|");
+    	for(int k = 0; k < a.cityList.length; k++){
+    		System.out.print(a.cityList[k] + " ");    	
+    	}*/
+    	//System.out.println("|");
+    	int count = 0;
+    	boolean replace=true;
+    	while (replace){
+    		for (int i = 0; i < a.cityList.length; i++){
+    			//Arrays.asList(cities).get(0).toString());
+    			if (count < cities.length){
+    				if (cities[count]==a.cityList[i]){
+    					//System.out.println("hi " + count);
+    				
+    					//System.out.println();
+    					a.cityList[i] = -1;
+    					count++;
+    				}
+    			}
+    			else{
+    				replace = false;
+    			}
+    		}
+    	}
+    	/*for(int k = 0; k < a.cityList.length; k++){
+    		System.out.print(a.cityList[k] + " ");
+    	
+    	}
+    	System.out.println();*/
+    }
+    /*
+     * adds a list of cities from a list
+     * 
+     * @param cities list of city names
+     */
+    public static void add(Chromosome a, int[] cities, int start, int end){
+    	int count = 0, i = 0;
+    	ArrayList<Integer> temp = new ArrayList();
+    	boolean flag = false;
+    	
+    	while (count < cities.length){
+    		for(int k = 0; k < a.cityList.length; k++){
+        		System.out.print(a.cityList[k] + " ");
+        	
+        	}
+        	System.out.println();
+    		if (i%a.cityList.length == start && i < a.cityList.length){
+    			
+    			flag = true;    			
+    		}
+    		else if(i%a.cityList.length == (end+1)%a.cityList.length){
+    			
+    			flag = false;
+    		}
+    		if (flag && a.cityList[i%a.cityList.length] != -1){
+    			
+    			temp.add(a.cityList[i%a.cityList.length]);
+    			//a.cityList[i] = a.cityList[(i+1)%a.cityList.length];
+    			System.out.println(i + " " + (count) + " " + cities.length );
+				a.cityList[i%a.cityList.length] = cities[count];
+				count++;
+			}	
+    		else if (flag && a.cityList[i%a.cityList.length] == -1){
+    			System.out.println(start + " hi " + end + " " + cities[(i-start)] + " " + (i-start));
+    			a.cityList[i%a.cityList.length] = cities[(count)];     			
+    		}
+    		else if (a.cityList[i%a.cityList.length] == -1){
+    			//temp.add(a.cityList[i]);
+    			
+    			if (temp.isEmpty()){
+    				System.out.println("hey");
+    				a.cityList[i%a.cityList.length] = a.cityList[(i+1)%a.cityList.length];
+    				a.cityList[(i+1)%a.cityList.length] = -1;
+    			}
+    			else {
+    				a.cityList[i%a.cityList.length] =  temp.get(0);
+    				temp.remove(0);
+    			}
+    			
+    			//count++;
+    		}
+    		i++;
+    	}
+    }
+    
+    /*
+     * Check for equality of this chromosome and another
+     * return true if they are equal
+     * 
+     * @param other the other chromosome to check against
+     */
+    public boolean equal(Chromosome other){
+    	if (cityList.length == other.cityList.length)
+    		if (cost == other.cost)
+    			if (Arrays.equals(cityList, other.cityList))
+    				return true;
+    	return false;
+    }
     /**
      * Sort the chromosomes by their cost.
      *
