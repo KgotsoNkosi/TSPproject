@@ -111,24 +111,13 @@ class Chromosome {
      * @param cities list of city names
      */
     public static void remove(Chromosome a, int[] cities){
-    	/*for(int k = 0; k < cities.length; k++){
-    		System.out.print(cities[k] + " ");    	
-    	}
-    	System.out.println("|");
-    	for(int k = 0; k < a.cityList.length; k++){
-    		System.out.print(a.cityList[k] + " ");    	
-    	}*/
-    	//System.out.println("|");
+    	
     	int count = 0;
     	boolean replace=true;
     	while (replace){
     		for (int i = 0; i < a.cityList.length; i++){
-    			//Arrays.asList(cities).get(0).toString());
     			if (count < cities.length){
     				if (cities[count]==a.cityList[i]){
-    					//System.out.println("hi " + count);
-    				
-    					//System.out.println();
     					a.cityList[i] = -1;
     					count++;
     				}
@@ -138,11 +127,6 @@ class Chromosome {
     			}
     		}
     	}
-    	/*for(int k = 0; k < a.cityList.length; k++){
-    		System.out.print(a.cityList[k] + " ");
-    	
-    	}
-    	System.out.println();*/
     }
     /*
      * adds a list of cities from a list
@@ -154,47 +138,45 @@ class Chromosome {
     	ArrayList<Integer> temp = new ArrayList();
     	boolean flag = false;
     	
-    	while (count < cities.length){
-    		for(int k = 0; k < a.cityList.length; k++){
-        		System.out.print(a.cityList[k] + " ");
-        	
-        	}
-        	System.out.println();
-    		if (i%a.cityList.length == start && i < a.cityList.length){
-    			
+    	while (i < a.cityList.length || count < cities.length){
+
+    		if (i%a.cityList.length == start && i < a.cityList.length){    			
     			flag = true;    			
     		}
-    		else if(i%a.cityList.length == (end+1)%a.cityList.length){
-    			
+    		else if(i%a.cityList.length == (end)%a.cityList.length){    			
     			flag = false;
     		}
-    		if (flag && a.cityList[i%a.cityList.length] != -1){
-    			
+    		if (flag && a.cityList[i%a.cityList.length] != -1){    			
     			temp.add(a.cityList[i%a.cityList.length]);
-    			//a.cityList[i] = a.cityList[(i+1)%a.cityList.length];
-    			System.out.println(i + " " + (count) + " " + cities.length );
-				a.cityList[i%a.cityList.length] = cities[count];
+    			a.cityList[i%a.cityList.length] = cities[count];
 				count++;
 			}	
     		else if (flag && a.cityList[i%a.cityList.length] == -1){
-    			System.out.println(start + " hi " + end + " " + cities[(i-start)] + " " + (i-start));
-    			a.cityList[i%a.cityList.length] = cities[(count)];     			
+    			a.cityList[i%a.cityList.length] = cities[(count)];
+    			count++;
     		}
     		else if (a.cityList[i%a.cityList.length] == -1){
-    			//temp.add(a.cityList[i]);
-    			
     			if (temp.isEmpty()){
-    				System.out.println("hey");
-    				a.cityList[i%a.cityList.length] = a.cityList[(i+1)%a.cityList.length];
-    				a.cityList[(i+1)%a.cityList.length] = -1;
-    				i--;
+    				if (a.cityList[(i+1)%a.cityList.length] != -1){
+    					a.cityList[i%a.cityList.length] = a.cityList[(i+1)%a.cityList.length];
+    					a.cityList[(i+1)%a.cityList.length] = -1;
+    				}
+    				else{
+    					int incr = 0;
+    					while (a.cityList[(i+1+incr)%a.cityList.length] == -1){
+    						incr++;
+    					}
+    					a.cityList[i%a.cityList.length] = a.cityList[(i+1+incr)%a.cityList.length];
+    					a.cityList[(i+1+incr)%a.cityList.length] = -1;
+    				}
+    				
+    				
     			}
     			else {
-    				a.cityList[i%a.cityList.length] =  temp.get(0);
+    				a.cityList[i%a.cityList.length] =  temp.get(0).intValue();
     				temp.remove(0);
+    				
     			}
-    			
-    			//count++;
     		}
     		i++;
     	}
