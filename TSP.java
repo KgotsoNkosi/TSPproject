@@ -126,7 +126,42 @@ public class TSP {
     	return false;
     }
     /*
-     * mutates chromosome by swapping two adjacent cities
+     * mutates a chromosome by swapping two cities such that 
+     * a shorter sequence is created 
+     * 
+     * @param a chromosome to be mutated
+     */
+    public static Chromosome climb(Chromosome a){
+    	Random rand = new Random();
+    	int [] tempCityList = Arrays.copyOfRange(a.cityList, 0, a.cityList.length);
+    	Chromosome child = new Chromosome(cities);
+    	child.setCities(tempCityList);
+    	int cityA = 0, cityB = 0;
+    	for (int i = 0; i < tempCityList.length; i++){
+    		int tempCityA = tempCityList[i];
+    		for (int j = 0; j < tempCityList.length; j++){
+    			if (j == i){
+    				j = j +2;
+    			}
+    			int tempCityB = tempCityList[j%tempCityList.length];
+    			int[] checkAList = {tempCityList[(tempCityList.length-1+i)%tempCityList.length],tempCityA, tempCityList[(i+1)%tempCityList.length], tempCityList[(i+2)%tempCityList.length]};
+    			int[] checkBList = {tempCityList[(tempCityList.length-1+j)%tempCityList.length], tempCityB, tempCityList[(j+1)%tempCityList.length], tempCityList[(j+2)%tempCityList.length]};
+    			int[] checkABList = {tempCityList[(tempCityList.length-1+i)%tempCityList.length],tempCityA, tempCityB, tempCityList[(i+2)%tempCityList.length]};
+    			if (distance(checkABList)<distance(checkAList)&& distance(checkBList)<distance(checkABList)){
+    				cityA = tempCityList[(i+1)%tempCityList.length];
+    				cityB = tempCityB;
+    			}
+    		}
+    	}
+    	int indexA = child.findCity(cityA);
+    	int indexB = child.findCity(cityB);
+    	
+    	child.setCity(indexA, cityB);
+    	child.setCity(indexB, cityA);
+    	return child;
+    }
+    /*
+     * mutates a chromosome by swapping two adjacent cities
      * 
      * @param a chromosome to be mutated
      */
@@ -136,11 +171,14 @@ public class TSP {
     	mutant.setCities(a.cityList);
     	mutant.calculateCost(cities);
 		int cityA = rand.nextInt(mutant.cityList.length);
-		cityA = mutant.getCity(mutant.findCity(cityA));
+		System.out.println(cityA);
+		int indexA = mutant.findCity(cityA);
+		cityA = mutant.getCity(indexA);
 		int cityB = mutant.getCity((mutant.findCity(cityA)+1)%mutant.cityList.length);
 		
-		mutant.setCity((mutant.findCity(cityA))%mutant.cityList.length, cityB);
-		mutant.setCity((mutant.findCity(cityB))%mutant.cityList.length, cityA);
+    	int indexB = mutant.findCity(cityB);
+		mutant.setCity(indexA, cityB);
+		mutant.setCity(indexB, cityA);
 		mutant.calculateCost(cities);
     	return mutant;
     	
@@ -156,10 +194,10 @@ public class TSP {
      */
     public static Chromosome recombinate (Chromosome a, Chromosome b){
     	Random rand = new Random();
-    	int cityA = rand.nextInt(b.cityList.length-2)+1;
+    	int cityA = rand.nextInt(b.cityList.length-3)+1;
     	int cityB = cityA;
     	while (cityA >= cityB)
-    		cityB = rand.nextInt(b.cityList.length-1);
+    		cityB = rand.nextInt(b.cityList.length);
 		int[] recombBList = Arrays.copyOfRange(b.cityList,cityA,cityB);
 				
 		Chromosome.remove(a, recombBList);
@@ -170,6 +208,33 @@ public class TSP {
     	
     }
     /*
+     * scrambles the list of given cities
+     * returns the list of scrambled cities
+     * 
+     * @param cities the list of cities to be reversed
+     */
+    public static int[] scramble(int[] cities){
+    	//int temp;
+    	Random rand = new Random();
+    	int [] temp = Arrays.copyOf(cities, cities.length); 
+    	ArrayList<Integer> positions = new ArrayList<>();
+    	for (int i = 0; i < cities.length; i++){ 
+    		Integer position = rand.nextInt(cities.length);
+    		if (i == 0){
+    			positions.add(position);
+    		}
+    		else{
+    			while (positions.contains(position)){
+    				position = rand.nextInt(cities.length);
+    			}
+    			positions.add(position);
+    		}
+    		cities[position] = temp[i];
+    	}
+    	
+    	return cities;
+    }
+    /*
      * reverses the list of given cities
      * returns the list of reversed cities
      * 
@@ -178,8 +243,8 @@ public class TSP {
     public static int[] reverse(int[] cities){
     	//int temp;
     	int [] temp = Arrays.copyOf(cities, cities.length);    	
-    	for (int i = cities.length-1; i > 0; i--){    		
-    		cities[cities.length-i] = temp[i];
+    	for (int i = cities.length; i > 0; i--){    		
+    		cities[cities.length-i] = temp[i-1];
     	}
     	
     	return cities;
@@ -213,6 +278,108 @@ public class TSP {
     	
     }
     /*
+     * determines the cost of a list of cities
+     * returns the cost of the list
+     * 
+     * @param list the list of cities for which a cost must be determined
+     */
+    public static double distance (int[] list){
+    	double total = 0.0;
+    	
+    	for (int i = 0; i < list.length; i++){    		
+    		total += cities[list[i]].proximity(cities[list[(i+1)%list.length]]);
+    	}
+    	return total;
+    }
+    /*
+     * recombine the shortest section of a specified length
+     * return recombined child
+     * 
+     * @param a chromosome to recombine from
+     * @param b chromosome to recombine to
+     * @param length the length of the sub-list
+     * 
+     */
+    public static Chromosome shortestRecombine(Chromosome a, Chromosome b, int length){
+    	Chromosome child = new Chromosome(cities);
+    	child.setCities(b.cityList);
+    	int [] recombList = Arrays.copyOf(a.cityList, length);
+    	int cityA = 0, cityB = length;
+    	for (int i = 0; i < a.cityList.length; i++){
+    		int tempCityA = i%a.cityList.length;
+    		int tempCityB = (i+length)%a.cityList.length;
+    		
+    		int[] newList = recombList; 
+    		if (tempCityA < tempCityB){
+    			newList = Arrays.copyOfRange(a.cityList, i%a.cityList.length, (i+length)%a.cityList.length);
+    		}
+    		else{
+    			newList = join(Arrays.copyOfRange(a.cityList, tempCityB, a.cityList.length),Arrays.copyOfRange(a.cityList, 0, tempCityA), Arrays.copyOfRange(a.cityList, 0, 0));
+    		}
+    		if (distance(newList) > distance(recombList)){
+    			recombList = newList;
+    			cityA = i%a.cityList.length;
+    			cityB = (i+length)%a.cityList.length;
+    		}
+    	}
+    	recombList = scramble(recombList);
+    	//recombList = reverse(recombList);
+    	if (cityA<cityB){
+    		recombList = join(Arrays.copyOfRange(a.cityList, 0, cityA), recombList, Arrays.copyOfRange(a.cityList, cityB, a.cityList.length));
+    	}
+    	else{
+    		recombList = join(Arrays.copyOfRange(recombList,a.cityList.length-cityA+1,recombList.length), Arrays.copyOfRange(a.cityList, cityB, cityA), Arrays.copyOfRange(recombList, 0, a.cityList.length-cityA+1));
+    		
+    	}
+    	child.setCities(recombList);
+    	child.calculateCost(cities);
+    	return child;
+    }
+    
+    /*
+     * recombine the shortest reversed section (of length 3) of a specified length
+     * return recombined child
+     * 
+     * @param a chromosome to recombine from
+     * @param b chromosome to recombine to
+     * @param length the length of the sub-list
+     * 
+     */
+    public static Chromosome shortestTRRecombine(Chromosome a, Chromosome b, int length){
+    	Chromosome child = new Chromosome(cities);
+    	child.setCities(b.cityList);
+    	int [] recombList = Arrays.copyOf(a.cityList, length);
+    	int cityA = 0, cityB = length;
+    	for (int i = 0; i < a.cityList.length; i++){
+    		int tempCityA = i%a.cityList.length;
+    		int tempCityB = (i+length)%a.cityList.length;
+    		
+    		int[] newList = recombList; 
+    		if (tempCityA < tempCityB){
+    			newList = Arrays.copyOfRange(a.cityList, i%a.cityList.length, (i+length)%a.cityList.length);
+    		}
+    		else{
+    			newList = join(Arrays.copyOfRange(a.cityList, tempCityB, a.cityList.length),Arrays.copyOfRange(a.cityList, 0, tempCityB), Arrays.copyOfRange(a.cityList, 0, 0));
+    		}
+    		if (distance(newList) > distance(recombList)){
+    			recombList = newList;
+    			cityA = i%a.cityList.length;
+    			cityB = (i+length)%a.cityList.length;
+    		}
+    	}
+    	//Arrays.reverse
+    	if (cityA<cityB){
+    		recombList = join(Arrays.copyOfRange(a.cityList, 0, cityA), recombList, Arrays.copyOfRange(a.cityList, cityB, a.cityList.length));
+    	}
+    	else{
+    		recombList = join(Arrays.copyOfRange(recombList,a.cityList.length-1-cityA,recombList.length), Arrays.copyOfRange(a.cityList, cityB+1, cityA), Arrays.copyOfRange(recombList, 0, a.cityList.length-1-cityA));
+    		
+    	}
+    	child.setCities(recombList);
+    	child.calculateCost(cities);
+    	return child;
+    }
+    /*
      * an implementation of the pmx (partial match crossover) crossover variation operator
      * returns the resultant child
      * 
@@ -233,10 +400,11 @@ public class TSP {
 		ArrayList<Integer> positions = new ArrayList();
 		int count = 0;
 		Chromosome child = new Chromosome(cities);
-		boolean notIn = true;
+		//boolean notIn = true;
 		//add those in parent 2 swath not in parent 1 swath
 		
-		for (int c = 0; c < recombBList.length; c++){
+		for (int c = 0; c < aList.length; c++){
+			boolean notIn = true;
 			for (int j = 0; j <recombBList.length; j++){
 				if (aList[c] == recombBList[j]){
 					notIn = false;
@@ -244,15 +412,16 @@ public class TSP {
 				}
 			}
 			if (notIn){
-				int value = recombBList[c];
-				for (int k = 0; k < b.cityList.length; k++){
-					if (value == b.cityList[k] && (k < cityA || k >= cityB)){
+				int value = aList[c];
+				int searchValue = recombBList[c];
+				for (int k = 0; k <a.cityList.length; k++){
+					if (searchValue == a.cityList[k] && (k < cityA || k >= cityB)){
 						newList[k] = value;
 						positions.add(k);
-						k = b.cityList.length;
+						k = a.cityList.length;
 					}
-					else if (value == b.cityList[k] && (k >=cityA && k < cityB)){
-						value = a.cityList[k];						
+					else if (searchValue == a.cityList[k] && (k >=cityA && k < cityB)){
+						searchValue = b.cityList[k];						
 						k=0;
 					}
 				}				
@@ -263,7 +432,7 @@ public class TSP {
 			
 			if(i>=cityA && i < cityB && count < recombBList.length){
 				newList[i] = recombBList[count];
-				System.out.println(recombBList.length + " " + count);
+				//System.out.println(cityB + " " + i);
 				count++;
 				
 			}
@@ -273,14 +442,30 @@ public class TSP {
 					oCount++;
 				}					
 			}
+			//if (i >= cityB && count < recombBlist.length -)
 			
 		}
 		int length = positions.size() + count +oCount;
-		for(int p = 0; p < newList.length; p++){
+		/*for(int p = 0; p < newList.length; p++){
     		System.out.print(newList[p] + " ");        	
     	}
     	System.out.println("|"+gc+"|" + length);
-		
+    	for(int p = 0; p < a.cityList.length; p++){
+    		System.out.print(a.cityList[p] + " ");        	
+    	}
+    	System.out.println("|a|" + length);
+    	for(int p = 0; p < b.cityList.length; p++){
+    		System.out.print(b.cityList[p] + " ");        	
+    	}
+    	System.out.println("|b|" + length);
+    	for(int p = 0; p < aList.length; p++){
+    		System.out.print(aList[p] + " ");        	
+    	}
+    	System.out.println("|a|" + length);
+    	for(int p = 0; p < recombBList.length; p++){
+    		System.out.print(recombBList[p] + " ");        	
+    	}
+    	System.out.println("|b|" + length);*/
 		child.setCities(newList);
 		
 		child.calculateCost(cities);
@@ -338,8 +523,8 @@ public class TSP {
     	}
 
     	while (count < chromosomes.length){
-    		double probability = (count/chromosomes.length);
-    		double recomboP = rand.nextDouble();
+    		
+    		
     		int num = rand.nextInt((int)total);
     		boolean uniqueInList = false;
     		boolean retry = false;
@@ -351,26 +536,39 @@ public class TSP {
     				k = roulette.length;
     			}
     		}
+    		//key = 0;
     		while (!uniqueInList){
-    			
+    			double recomboP = rand.nextDouble();
     			uniqueInList = true;
     			if (!retry){
     				child.setCities(chromosomes[key%chromosomes.length].cityList);
     				child.calculateCost(cities);
     				
-    				if (recomboP >= 0.66){
-    	    			child = recombinate(child, chromosomes[((key+1)%chromosomes.length)]);
-    				}
-    	    		else if (recomboP >= 0.33 && recomboP < 0.66){    	    				
-    	    			child = reverseRecombinate(child, chromosomes[((key+1)%chromosomes.length)]);    	    				
-    	    		}
-    	    		else if(recomboP >= 0 && recomboP < 0.33){
-    	    			child = pmx(child, chromosomes[((key+1)%chromosomes.length)]);
-    	    		}
+        			
     			}
-    			
-    			child = invert(child);   			
-    			
+    			//child = reverseRecombinate(child, chromosomes[((key+1)%chromosomes.length)]);
+    			//child = invert(child);
+    			//child = shortestRecombine(child, chromosomes[(key+1)%chromosomes.length], 3);
+    			child = invert(child);
+    			child = shortestRecombine(child, chromosomes[(key+1)%chromosomes.length], rand.nextInt(chromosomes[(key+1)%chromosomes.length].cityList.length-1) +1);
+    			//if ( recomboP >= 0.7){
+    				//child = invert(child); 
+	    		//	child = reverseRecombinate(child, chromosomes[((key+1)%chromosomes.length)]);
+	    			
+				//}
+	    		/*else if (recomboP >= 0.33 && recomboP < 0.66){ 
+	    			//child = invert(child);	    			
+	    			child = recombinate(child, chromosomes[((key+1)%chromosomes.length)]); 
+	    			
+	    		}*/
+	    		//else if(recomboP < 0.2){
+	    			//child = invert(child); 
+	    			//child = reverseRecombinate(child, chromosomes[((key+1)%chromosomes.length)]);
+	    			
+	    			//child = climb(child); 
+	    		//	child = shortestRecombine(child, chromosomes[(key+1)%chromosomes.length], rand.nextInt(chromosomes[(key+1)%chromosomes.length].cityList.length-1) +1);
+	    			 
+	    		//}
         		for (int i = 0; i < chromosomes.length; i++){        			
         			if (child.equal(chromosomes[i])){
         				retry = true;
@@ -380,15 +578,19 @@ public class TSP {
     		}
     		children[count] = (child);
     		count++;
+    		//key++;
     	}
+    	
     	count = 0;
-    	for (int w = chromosomes.length/2; w < chromosomes.length; w++){
-    		
-    		if (better(children[count], chromosomes[w%chromosomes.length]) /*|| num < probability */){//&& count > chromosomes.length/2)
+    	for (int w = 0; w < chromosomes.length && count < children.length; w++){
+    		double probability = (count/Math.pow(chromosomes.length, generation));
+    		double check = rand.nextDouble();
+    		if((better(children[count], chromosomes[w%chromosomes.length]) || check > probability)){
     			chromosomes[w%chromosomes.length] = children[count];
     			count++;
     		}
     	}
+    	
     }
     public static int[] join(int[] a, int[] b, int[] c) {
     	int aLen = a.length;
@@ -565,7 +767,7 @@ public class TSP {
                         chromosomes[x] = new Chromosome(cities);
                         //chromosomes[x] = twoOpt(chromosomes[x]);
                     }
-
+                    Chromosome.sortChromosomes(chromosomes, populationSize);
                     generation = 0;
                     double thisCost = 0.0;
 
